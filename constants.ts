@@ -1,0 +1,226 @@
+
+import { Product, Ticket, MarketPrice, Language, CropOffer, InputOrder } from './types';
+
+// Ethiopian Context Images - High Quality / "AI Enhanced" Look
+const IMG_TEFF = "https://images.unsplash.com/photo-1474440692490-2e88a54e2474?q=80&w=800&auto=format&fit=crop"; // Macro detailed grain
+const IMG_COFFEE = "https://images.unsplash.com/photo-1524350876685-274059332603?q=80&w=800&auto=format&fit=crop"; // Vibrant coffee cherries
+const IMG_MAIZE = "https://images.unsplash.com/photo-1629855325595-f932e65c568f?q=80&w=800&auto=format&fit=crop"; // HD Golden Corn
+const IMG_FERT = "https://plus.unsplash.com/premium_photo-1661962692059-55d5a4319814?q=80&w=800&auto=format&fit=crop"; // Professional packaging
+const IMG_TOOL = "https://images.unsplash.com/photo-1416879749666-65e939863894?q=80&w=800&auto=format&fit=crop"; // Rustic aesthetic tool
+const IMG_WHEAT = "https://images.unsplash.com/photo-1501430654243-c934cec2e1c0?q=80&w=800&auto=format&fit=crop"; // Golden Wheat Field
+const IMG_SPRAYER = "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?q=80&w=800&auto=format&fit=crop"; // Clean equipment
+
+export const ETHIOPIAN_NAMES = [
+  "Abebe Kebede", "Almaz Ayana", "Bekele Tadesse", "Chaltu Regasa", "Dawit Mulatu",
+  "Etenesh Diro", "Fikru Tefera", "Genet Yalew", "Hailemariam Desalegn", "Kassa Hailu",
+  "Lemlem Hailu", "Marta Yota", "Nardos Bekele", "Robel Teklemariam", "Solomon Deksisa",
+  "Tirhas Gebre", "Yomif Kejelcha", "Zenebech Tola", "Girma Wolde", "Hirut Mesfin"
+];
+
+export const INITIAL_PRODUCTS: Product[] = [
+  { id: '1', name: 'Red Teff Seeds (Magna)', category: 'Seeds', price: 8500, stock: 50, unit: 'quintal', image: IMG_TEFF },
+  { id: '2', name: 'DAP Fertilizer', category: 'Fertilizer', price: 4500, stock: 120, unit: '50kg', image: IMG_FERT },
+  { id: '3', name: 'Quality Coffee Seedlings', category: 'Seeds', price: 25, stock: 500, unit: 'seedling', image: IMG_COFFEE },
+  { id: '4', name: 'Hybrid Maize BH-661', category: 'Seeds', price: 3200, stock: 80, unit: '25kg', image: IMG_MAIZE },
+  { id: '5', name: 'Broad Hoe (Mekotkotia)', category: 'Tools', price: 350, stock: 200, unit: 'pcs', image: IMG_TOOL },
+  { id: '6', name: 'Wheat Seeds (Kingbird)', category: 'Seeds', price: 3800, stock: 60, unit: 'quintal', image: IMG_WHEAT },
+  { id: '7', name: 'Knapsack Sprayer (16L)', category: 'Tools', price: 1500, stock: 25, unit: 'pcs', image: IMG_SPRAYER },
+];
+
+export const INITIAL_PRICES: MarketPrice[] = [
+  { crop: 'Teff (White)', pricePerKg: 120, trend: 'up', lastUpdated: new Date().toISOString() },
+  { crop: 'Coffee (Jimma)', pricePerKg: 280, trend: 'stable', lastUpdated: new Date().toISOString() },
+  { crop: 'Maize', pricePerKg: 55, trend: 'down', lastUpdated: new Date().toISOString() },
+  { crop: 'Wheat', pricePerKg: 85, trend: 'up', lastUpdated: new Date().toISOString() },
+];
+
+export const INITIAL_TICKETS: Ticket[] = [
+  { 
+    id: 'T-1001', 
+    farmerName: 'Abebe Bikila', 
+    phoneNumber: '+251 911 234 567', 
+    issue: 'My Teff crop is showing signs of rust. Need advice immediately.', 
+    status: 'Open', 
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    priority: 'High'
+  },
+  { 
+    id: 'T-1002', 
+    farmerName: 'Almaz Ayana', 
+    phoneNumber: '+251 922 876 543', 
+    issue: 'When will the new batch of DAP fertilizer arrive?', 
+    status: 'In Progress', 
+    timestamp: new Date(Date.now() - 86400000).toISOString(),
+    priority: 'Medium'
+  },
+];
+
+export const INITIAL_OFFERS: CropOffer[] = [
+  {
+    id: 'O-5501',
+    farmerName: 'Derartu Tulu',
+    crop: 'Coffee (Jimma)',
+    quantity: 15, // Quintals
+    status: 'Pending',
+    timestamp: new Date(Date.now() - 7200000).toISOString(),
+  },
+  {
+    id: 'O-5502',
+    farmerName: 'Kenenisa Bekele',
+    crop: 'Teff (White)',
+    quantity: 40,
+    status: 'Pending',
+    timestamp: new Date(Date.now() - 14000000).toISOString(),
+  },
+  {
+    id: 'O-5503',
+    farmerName: 'Tirunesh Dibaba',
+    crop: 'Maize',
+    quantity: 100,
+    status: 'Accepted',
+    timestamp: new Date(Date.now() - 40000000).toISOString(),
+  },
+  {
+    id: 'O-5504',
+    farmerName: 'Haile Gebrselassie',
+    crop: 'Wheat',
+    quantity: 60,
+    status: 'Pending',
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    id: 'O-5505',
+    farmerName: 'Girma Wolde',
+    crop: 'Coffee (Jimma)',
+    quantity: 12,
+    status: 'Pending',
+    timestamp: new Date(Date.now() - 1800000).toISOString(),
+  },
+  {
+    id: 'O-5506',
+    farmerName: 'Hirut Mesfin',
+    crop: 'Maize',
+    quantity: 85,
+    status: 'Pending',
+    timestamp: new Date(Date.now() - 900000).toISOString(),
+  },
+  {
+    id: 'O-5507',
+    farmerName: 'Bekele Tadesse',
+    crop: 'Teff (White)',
+    quantity: 25,
+    status: 'Pending',
+    timestamp: new Date(Date.now() - 43200000).toISOString(),
+  },
+  {
+    id: 'O-5508',
+    farmerName: 'Meseret Defar',
+    crop: 'Teff (White)',
+    quantity: 18,
+    status: 'Pending',
+    timestamp: new Date(Date.now() - 600000).toISOString(),
+  },
+  {
+    id: 'O-5509',
+    farmerName: 'Berhane Adere',
+    crop: 'Wheat',
+    quantity: 45,
+    status: 'Pending',
+    timestamp: new Date(Date.now() - 200000).toISOString(),
+  },
+  {
+    id: 'O-5510',
+    farmerName: 'Sileshi Sihine',
+    crop: 'Coffee (Jimma)',
+    quantity: 8,
+    status: 'Pending',
+    timestamp: new Date(Date.now() - 100000).toISOString(),
+  }
+];
+
+export const INITIAL_ORDERS: InputOrder[] = [
+  {
+    id: 'OR-901',
+    farmerName: 'Mamo Wolde',
+    productName: 'DAP Fertilizer',
+    quantity: 2,
+    totalPrice: 9000,
+    status: 'Pending',
+    timestamp: new Date(Date.now() - 10000000).toISOString(),
+  }
+];
+
+export const TRANSLATIONS: Record<Language, Record<string, string>> = {
+  en: {
+    app_name: 'AgriConnect Ethiopia',
+    welcome: 'Welcome',
+    inventory: 'My Store', // Renamed from Inventory
+    requests: 'Support Tickets',
+    buying: 'Marketplace', // Renamed from Buying
+    orders: 'Input Orders', // New
+    market_prices: 'Market Prices',
+    history: 'History',
+    search: 'Search...',
+    add_product: 'Add Input Stock',
+    stock_level: 'In Stock',
+    price: 'Price',
+    last_updated: 'Last updated',
+    trend: 'Trend',
+    upload_image: 'Upload Image',
+    farmer: 'Farmer',
+    dealer: 'Dealer',
+    agent: 'Call Center',
+    select_persona: 'Select Persona',
+    type_message: 'Sell Teff, Buy DAP...',
+    chat_subtitle: 'Chat to Sell Produce or Buy Inputs',
+    ussd_prompt: 'Type *808#',
+    stock_updated: 'Stock updated',
+    price_updated: 'Price updated',
+    sell_produce: 'Sell Produce',
+    buy_inputs: 'Buy Inputs',
+    quantity_quintal: 'Qty (Quintal)',
+    estimated_value: 'Est. Value',
+    accept: 'Buy Crop',
+    reject: 'Ignore',
+    status: 'Status',
+    fulfill: 'Fulfill Order',
+    sms_accepted: 'DEAL ALERT: Your offer for {qty} Qtl of {crop} has been ACCEPTED by Dealer. Total: {total} ETB. Please call Dealer: 0911-55-44-22.',
+    sms_order_fulfilled: 'ORDER READY: Your order for {qty}x {product} is ready for pickup. Total: {total} ETB. Call Dealer: 0911-55-44-22 to arrange transport.',
+  },
+  am: {
+    app_name: 'አግሪ-ኮኔክት ኢትዮጵያ',
+    welcome: 'እንኳን ደህና መጡ',
+    inventory: 'የእኔ መጋዘን',
+    requests: 'የደንበኛ ጥያቄዎች',
+    buying: 'የገበያ ቦታ', // Marketplace
+    orders: 'የግብዓት ትዕዛዞች', // Input Orders
+    market_prices: 'የገበያ ዋጋ',
+    history: 'ታሪክ',
+    search: 'ፈልግ...',
+    add_product: 'ግብዓት ጨምር',
+    stock_level: 'ያለ እቃ',
+    price: 'ዋጋ',
+    last_updated: 'መጨረሻ የተሻሻለው',
+    trend: 'ሁኔታ',
+    upload_image: 'ፎቶ ጫን',
+    farmer: 'ገበሬ',
+    dealer: 'ነጋዴ',
+    agent: 'የደንበኛ አገልግሎት',
+    select_persona: 'ሚና ይምረጡ',
+    type_message: 'ጤፍ ለመሸጥ፣ ማዳበሪያ ለመግዛት...',
+    chat_subtitle: 'ምርት ለመሸጥ ወይም ግብዓት ለመግዛት',
+    ussd_prompt: '*808# ይደውሉ',
+    stock_updated: 'የእቃ መጠን ተሻሽሏል',
+    price_updated: 'ዋጋ ተሻሽሏል',
+    sell_produce: 'ምርት ለመሸጥ',
+    buy_inputs: 'ግብዓት ለመግዛት',
+    quantity_quintal: 'መጠን (ኩንታል)',
+    estimated_value: 'ግምታዊ ዋጋ',
+    accept: 'ይግዙ',
+    reject: 'ይለፉ',
+    status: 'ሁኔታ',
+    fulfill: 'ትዕዛዝ ይሙሉ',
+    sms_accepted: 'መልካም ዜና: የእርስዎ {qty} ኩንታል {crop} ሽያጭ ጥያቄ በነጋዴው ተቀባይነት አግኝቷል። አጠቃላይ: {total} ብር። ለነጋዴው በዚህ ቁጥር ይደውሉ: 0911-55-44-22።',
+    sms_order_fulfilled: 'የትዕዛዝ መረጃ: ያዘዙት {qty} {product} ተዘጋጅቷል። ጠቅላላ: {total} ብር። ከግሪን-አግሮ መጋዘን መውሰድ ይችላሉ። ስልክ: 0911-55-44-22።',
+  }
+};
