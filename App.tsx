@@ -36,24 +36,37 @@ const App: React.FC = () => {
 
   const t = TRANSLATIONS[language];
 
-  // Initialize Farming Tip
+  // Initialize Farming Tip and Update Initial Alert on Language Change
   useEffect(() => {
     const fetchTip = async () => {
-      // Removed artificial delay for faster loading
-      const tip = await generateFarmingTip();
-      // Avoid duplicate tip if re-rendered
+      // 1. Update/Translate the initial ALERT if it exists
       setSmsMessages(prev => {
-        if (prev.some(m => m.text.includes('DAILY TIP'))) return prev;
+        const hasAlert = prev.some(m => m.id === '1');
+        if (hasAlert) {
+            return prev.map(m => m.id === '1' ? { ...m, text: t.system_alert || m.text } : m);
+        }
+        return prev;
+      });
+
+      // 2. Add/Update Daily Tip
+      const tip = await generateFarmingTip(language);
+      setSmsMessages(prev => {
+        const prefix = language === 'en' ? 'DAILY TIP' : 'የቀን ምክር';
+        // Avoid adding duplicate tip for the current language session, but we want to show it
+        const alreadyHasTip = prev.some(m => m.text.includes(prefix) && m.text.includes(tip));
+        
+        if (alreadyHasTip) return prev;
+        
         return [...prev, {
           id: Date.now().toString(),
           sender: 'System',
-          text: `DAILY TIP: ${tip}`,
+          text: `${prefix}: ${tip}`,
           timestamp: new Date().toISOString()
         }];
       });
     };
     fetchTip();
-  }, []);
+  }, [language]);
 
   // Handlers
   const handleSendMessage = async (text: string) => {
@@ -67,7 +80,7 @@ const App: React.FC = () => {
 
     // Generate AI Reply
     try {
-      const replyText = await generateSMSReply(text);
+      const replyText = await generateSMSReply(text, language);
       const systemReply: SMSMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'System',
@@ -92,6 +105,15 @@ const App: React.FC = () => {
     setInventory(prev => prev.map(p => p.id === id ? { ...p, image: imageUrl } : p));
   };
 
+  const handleAddProduct = (productData: Omit<Product, 'id' | 'image'>) => {
+    const newProduct: Product = {
+      id: Date.now().toString(),
+      ...productData,
+      image: undefined // Will use placeholder
+    };
+    setInventory(prev => [newProduct, ...prev]);
+  };
+
   const handleCreateTicket = (issue: string) => {
     const newTicket: Ticket = {
       id: `T-${Math.floor(Math.random() * 10000)}`,
@@ -105,13 +127,13 @@ const App: React.FC = () => {
     setTickets(prev => [newTicket, ...prev]);
   };
 
-  const handleCreateOffer = (crop: string, quantity: number) => {
-    // Pick a random Ethiopian name
-    const randomName = ETHIOPIAN_NAMES[Math.floor(Math.random() * ETHIOPIAN_NAMES.length)];
+  const handleCreateOffer = (crop: string, quantity: number, farmerName?: string) => {
+    // Use the registered name if provided, otherwise pick a random one
+    const nameToUse = farmerName || ETHIOPIAN_NAMES[Math.floor(Math.random() * ETHIOPIAN_NAMES.length)];
     
     const newOffer: CropOffer = {
         id: `O-${Math.floor(Math.random() * 10000)}`,
-        farmerName: randomName,
+        farmerName: nameToUse,
         crop: crop,
         quantity: quantity,
         status: 'Pending',
@@ -219,36 +241,36 @@ const App: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-transparent to-slate-50/50 dark:to-slate-950/50 pointer-events-none z-0"></div>
 
         {/* Navigation Bar */}
-        <nav className="bg-gradient-to-r from-green-700 via-emerald-600 to-teal-600 dark:from-slate-900 dark:via-slate-800 dark:to-slate-950 text-white shadow-lg z-50 transition-all duration-500 sticky top-0 shrink-0">
+        <nav className="bg-slate-900 dark:bg-slate-950 text-white shadow-lg z-50 transition-all duration-500 sticky top-0 shrink-0">
           <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
             <div className="relative flex items-center justify-between h-16">
               
               <div className="flex-shrink-0 flex items-center gap-2 mr-2 sm:mr-6">
-                <div className="bg-white/20 p-2 rounded-full backdrop-blur-sm border border-white/10 shadow-inner">
+                <div className="bg-emerald-600 p-2 rounded-lg shadow-inner">
                    <Sprout className="text-white h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
-                <span className="font-bold text-lg tracking-tight hidden sm:block text-white/95 text-shadow-sm">AgriConnect</span>
+                <span className="font-bold text-lg tracking-tight hidden sm:block text-white">AgriConnect</span>
               </div>
 
               <div className="flex-1 flex justify-center overflow-x-auto no-scrollbar py-2">
-                <div className="flex bg-black/10 dark:bg-white/5 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-inner whitespace-nowrap">
+                <div className="flex bg-slate-800 rounded-full p-1 border border-slate-700 whitespace-nowrap">
                   <button 
                     onClick={() => setRole(UserRole.FARMER)}
-                    className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 ${role === UserRole.FARMER ? 'bg-white text-emerald-700 shadow-md transform scale-105' : 'text-emerald-50 hover:bg-white/10 hover:text-white'}`}
+                    className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 ${role === UserRole.FARMER ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-700 hover:text-white'}`}
                   >
                     <Smartphone size={16} />
                     <span className="hidden sm:inline">{t.farmer}</span>
                   </button>
                   <button 
                     onClick={() => setRole(UserRole.DEALER)}
-                    className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 ${role === UserRole.DEALER ? 'bg-white text-emerald-700 shadow-md transform scale-105' : 'text-emerald-50 hover:bg-white/10 hover:text-white'}`}
+                    className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 ${role === UserRole.DEALER ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-700 hover:text-white'}`}
                   >
                     <Store size={16} />
                     <span className="hidden sm:inline">{t.dealer}</span>
                   </button>
                   <button 
                     onClick={() => setRole(UserRole.AGENT)}
-                    className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 ${role === UserRole.AGENT ? 'bg-white text-emerald-700 shadow-md transform scale-105' : 'text-emerald-50 hover:bg-white/10 hover:text-white'}`}
+                    className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 ${role === UserRole.AGENT ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-700 hover:text-white'}`}
                   >
                     <Headset size={16} />
                     <span className="hidden sm:inline">{t.agent}</span>
@@ -259,7 +281,7 @@ const App: React.FC = () => {
               <div className="flex items-center gap-2 ml-2 sm:ml-6 shrink-0">
                 <button
                   onClick={() => setLanguage(l => l === 'en' ? 'am' : 'en')}
-                  className="flex items-center justify-center h-9 px-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all border border-white/20 backdrop-blur-sm active:scale-95"
+                  className="flex items-center justify-center h-9 px-3 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700"
                   title="Switch Language"
                 >
                   <Globe size={14} className="mr-1" />
@@ -267,7 +289,7 @@ const App: React.FC = () => {
                 </button>
                 <button 
                   onClick={() => setIsDarkMode(!isDarkMode)}
-                  className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all border border-white/20 backdrop-blur-sm active:scale-95"
+                  className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700"
                   title="Toggle Dark Mode"
                 >
                   {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -357,7 +379,7 @@ const App: React.FC = () => {
 
           {role === UserRole.DEALER && (
             !isDealerLoggedIn ? (
-              <Login onLogin={() => setIsDealerLoggedIn(true)} />
+              <Login onLogin={() => setIsDealerLoggedIn(true)} language={language} />
             ) : (
               <DealerDashboard 
                 inventory={inventory} 
@@ -371,6 +393,7 @@ const App: React.FC = () => {
                 onUpdateImage={handleUpdateProductImage}
                 onUpdateOfferStatus={handleUpdateOfferStatus}
                 onUpdateOrderStatus={handleUpdateOrderStatus}
+                onAddProduct={handleAddProduct}
                 onLogout={() => setIsDealerLoggedIn(false)}
               />
             )
@@ -394,7 +417,7 @@ const App: React.FC = () => {
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
-                <FeaturePhone messages={smsMessages} farmerName="Sim Phone" />
+                <FeaturePhone messages={smsMessages} farmerName="Sim Phone" language={language} />
               </div>
             </div>
           )}

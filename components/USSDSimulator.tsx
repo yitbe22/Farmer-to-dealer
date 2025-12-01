@@ -2,12 +2,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Phone, Delete, Signal, Battery, Loader2, ChevronUp, ChevronDown, Menu } from 'lucide-react';
 import { MarketPrice, Language, Product } from '../types';
+import { TRANSLATIONS } from '../constants';
 
 interface USSDSimulatorProps {
   marketPrices: MarketPrice[];
   dealerInventory: Product[];
   onRequestSupport: (issue: string) => void;
-  onCreateOffer: (crop: string, quantity: number) => void;
+  onCreateOffer: (crop: string, quantity: number, farmerName?: string) => void;
   onCreateOrder: (productId: string, quantity: number) => void;
   language: Language;
   deviceType: 'SMARTPHONE' | 'FEATURE_PHONE';
@@ -16,7 +17,7 @@ interface USSDSimulatorProps {
 const USSDSimulator: React.FC<USSDSimulatorProps> = ({ 
     marketPrices, dealerInventory, onRequestSupport, onCreateOffer, onCreateOrder, language, deviceType 
 }) => {
-  const [screen, setScreen] = useState<'IDLE' | 'DIALING' | 'MENU_LANG' | 'MENU_MAIN' | 'MENU_SELL' | 'MENU_SELL_QTY' | 'MENU_BUY' | 'MENU_BUY_ITEM' | 'MENU_BUY_QTY' | 'MENU_PRICES' | 'MENU_REPORT' | 'RESULT'>('IDLE');
+  const [screen, setScreen] = useState<'IDLE' | 'DIALING' | 'MENU_LANG' | 'MENU_MAIN' | 'MENU_SELL' | 'MENU_SELL_QTY' | 'MENU_BUY' | 'MENU_BUY_ITEM' | 'MENU_BUY_QTY' | 'MENU_PRICES' | 'MENU_REPORT' | 'MENU_REGISTER' | 'MENU_REG_NAME' | 'MENU_REG_REGION' | 'RESULT'>('IDLE');
   const [input, setInput] = useState('');
   const [sessionInput, setSessionInput] = useState('');
   const [displayText, setDisplayText] = useState('');
@@ -26,6 +27,12 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
   // Selection State
   const [selectedSellCrop, setSelectedSellCrop] = useState('');
   const [selectedBuyProduct, setSelectedBuyProduct] = useState<Product | null>(null);
+
+  // Registration State
+  const [registeredUser, setRegisteredUser] = useState<{name: string, region: string} | null>(null);
+  const [tempRegName, setTempRegName] = useState('');
+  
+  const t = TRANSLATIONS[language];
 
   // Time for status bar
   const [time, setTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
@@ -37,12 +44,12 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
   const goBackToMain = useCallback(() => {
     setScreen('MENU_MAIN');
     if (ussdLang === 'en') {
-      setDisplayText("AgriConnect Eth\n1. Sell Produce\n2. Buy Inputs\n3. Market Prices\n4. Farming Tips\n5. Report Issue");
+      setDisplayText(`AgriConnect Eth${registeredUser ? `\nHello, ${registeredUser.name}` : ''}\n1. Sell Produce\n2. Buy Inputs\n3. Market Prices\n4. Farming Tips\n5. Report Issue\n6. ${registeredUser ? 'My Account' : 'Create Account'}`);
     } else {
-      setDisplayText("አግሪ-ኮኔክት\n1. ምርት ለመሸጥ\n2. ግብዓት ለመግዛት\n3. የገበያ ዋጋ\n4. የግብርና ምክር\n5. ችግር ለማመልከት");
+      setDisplayText(`አግሪ-ኮኔክት${registeredUser ? `\nሰላም, ${registeredUser.name}` : ''}\n1. ምርት ለመሸጥ\n2. ግብዓት ለመግዛት\n3. የገበያ ዋጋ\n4. የግብርና ምክር\n5. ችግር ለማመልከት\n6. ${registeredUser ? 'የእኔ መለያ' : 'መለያ ይፍጠሩ'}`);
     }
     setSessionInput('');
-  }, [ussdLang]);
+  }, [ussdLang, registeredUser]);
 
   const processUSSD = useCallback((cmd: string) => {
     const currentInput = cmd.trim();
@@ -60,7 +67,7 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
           setDisplayText("Connection Error or Invalid MMI Code.\nTry *808#");
         }
         setSessionInput('');
-      }, 600); // Reduced delay for faster initial load
+      }, 300); // Reduced delay for faster initial load
       return;
     }
 
@@ -72,11 +79,11 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
         if (currentInput === '1') {
           setUssdLang('en');
           setScreen('MENU_MAIN');
-          setDisplayText("AgriConnect Eth\n1. Sell Produce\n2. Buy Inputs\n3. Market Prices\n4. Farming Tips\n5. Report Issue");
+          setDisplayText(`AgriConnect Eth${registeredUser ? `\nHello, ${registeredUser.name}` : ''}\n1. Sell Produce\n2. Buy Inputs\n3. Market Prices\n4. Farming Tips\n5. Report Issue\n6. ${registeredUser ? 'My Account' : 'Create Account'}`);
         } else if (currentInput === '2') {
           setUssdLang('am');
           setScreen('MENU_MAIN');
-          setDisplayText("አግሪ-ኮኔክት\n1. ምርት ለመሸጥ\n2. ግብዓት ለመግዛት\n3. የገበያ ዋጋ\n4. የግብርና ምክር\n5. ችግር ለማመልከት");
+          setDisplayText(`አግሪ-ኮኔክት${registeredUser ? `\nሰላም, ${registeredUser.name}` : ''}\n1. ምርት ለመሸጥ\n2. ግብዓት ለመግዛት\n3. የገበያ ዋጋ\n4. የግብርና ምክር\n5. ችግር ለማመልከት\n6. ${registeredUser ? 'የእኔ መለያ' : 'መለያ ይፍጠሩ'}`);
         } else {
           setDisplayText("Invalid Option/የተሳሳተ ምርጫ\n1. English\n2. አማርኛ");
         }
@@ -120,15 +127,80 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
         } else if (currentInput === '5') {
           setScreen('MENU_REPORT');
           setDisplayText(ussdLang === 'en' ? "Describe your issue:" : "ችግርዎን ይግለጹ:");
+        } else if (currentInput === '6') {
+            if (registeredUser) {
+                // Already registered
+                setScreen('RESULT');
+                setDisplayText(ussdLang === 'en' 
+                    ? `Name: ${registeredUser.name}\nRegion: ${registeredUser.region}\nStatus: Active\n\n0. Back` 
+                    : `ስም: ${registeredUser.name}\nክልል: ${registeredUser.region}\nሁኔታ: ንቁ\n\n0. ተመለስ`);
+            } else {
+                // Start Registration
+                setScreen('MENU_REG_NAME');
+                setDisplayText(ussdLang === 'en' ? "Enter your Full Name:" : "ሙሉ ስምዎን ያስገቡ:");
+            }
         } else {
           setDisplayText(ussdLang === 'en' 
-            ? "Invalid Option.\n1. Sell Produce\n2. Buy Inputs\n3. Prices\n4. Tips\n5. Report" 
-            : "የተሳሳተ ምርጫ።\n1. ምርት ለመሸጥ\n2. ግብዓት ለመግዛት\n3. የገበያ ዋጋ\n4. ምክር\n5. ሪፖርት");
+            ? "Invalid Option.\n1. Sell Produce\n2. Buy Inputs\n3. Prices\n4. Tips\n5. Report\n6. Account" 
+            : "የተሳሳተ ምርጫ።\n1. ምርት ለመሸጥ\n2. ግብዓት ለመግዛት\n3. የገበያ ዋጋ\n4. ምክር\n5. ሪፖርት\n6. መለያ");
         }
         setSessionInput('');
       }, 300);
       return;
     }
+
+    // --- REGISTRATION FLOW ---
+    if (screen === 'MENU_REG_NAME') {
+        setLoading(true);
+        setTimeout(() => {
+            setLoading(false);
+            // Strict Validation: Letters and spaces only, must have at least one space for "Full Name" feel, no numbers
+            const hasNumbers = /\d/.test(currentInput);
+            const hasLetters = /[a-zA-Z\u1200-\u137F]/.test(currentInput); // Ethiopic or Latin letters
+
+            if (currentInput.length > 2 && !hasNumbers && hasLetters) {
+                setTempRegName(currentInput);
+                setScreen('MENU_REG_REGION');
+                if (ussdLang === 'en') {
+                    setDisplayText("Select Region:\n1. Oromia\n2. Amhara\n3. SNNPR\n4. Sidama\n5. Tigray\n6. Somali\n7. Addis Ababa");
+                } else {
+                    setDisplayText("ክልል ይምረጡ:\n1. ኦሮሚያ\n2. አማራ\n3. ደቡብ\n4. ሲዳማ\n5. ትግራይ\n6. ሶማሌ\n7. አዲስ አበባ");
+                }
+            } else {
+                setDisplayText(ussdLang === 'en' ? "Invalid Name (Letters only).\nEnter Full Name:" : "ትክክለኛ ስም ያስገቡ (ፊደላት ብቻ)።\nሙሉ ስም ያስገቡ:");
+            }
+            setSessionInput('');
+        }, 300);
+        return;
+    }
+
+    if (screen === 'MENU_REG_REGION') {
+        setLoading(true);
+        setTimeout(() => {
+            setLoading(false);
+            const regionsEn = ['Oromia', 'Amhara', 'SNNPR', 'Sidama', 'Tigray', 'Somali', 'Addis Ababa'];
+            const regionsAm = ['ኦሮሚያ', 'አማራ', 'ደቡብ', 'ሲዳማ', 'ትግራይ', 'ሶማሌ', 'አዲስ አበባ'];
+            
+            const idx = parseInt(currentInput) - 1;
+            
+            if (idx >= 0 && idx < regionsEn.length) {
+                const region = ussdLang === 'en' ? regionsEn[idx] : regionsAm[idx];
+                const newUser = { name: tempRegName, region };
+                setRegisteredUser(newUser);
+                setScreen('RESULT');
+                setDisplayText(ussdLang === 'en' 
+                    ? `Welcome, ${tempRegName}!\nAccount Created.\nRegion: ${region}\n\n0. Main Menu` 
+                    : `እንኳን ደህና መጡ ${tempRegName}!\nመለያ ተፈጥሯል።\nክልል: ${region}\n\n0. ዋና ማውጫ`);
+            } else {
+                 setDisplayText(ussdLang === 'en' 
+                    ? "Invalid Region.\n1. Oromia\n2. Amhara\n3. SNNPR\n4. Sidama..." 
+                    : "የተሳሳተ ክልል\n1. ኦሮሚያ\n2. አማራ\n3. ደቡብ\n4. ሲዳማ...");
+            }
+            setSessionInput('');
+        }, 500);
+        return;
+    }
+
 
     // --- SELL FLOW ---
     if (screen === 'MENU_SELL') {
@@ -162,7 +234,8 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
             setLoading(false);
             const qty = parseFloat(currentInput);
             if (!isNaN(qty) && qty > 0) {
-                onCreateOffer(selectedSellCrop, qty);
+                // Pass the registered user's name if available
+                onCreateOffer(selectedSellCrop, qty, registeredUser?.name);
                 setScreen('RESULT');
                 setDisplayText(ussdLang === 'en' 
                     ? `Offer Sent!\n${qty} Qtl of ${selectedSellCrop}.\nDealers will contact you.\n\n0. Exit` 
@@ -195,9 +268,6 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
                     setDisplayText(ussdLang === 'en' 
                         ? `No ${category} available.\n0. Back` 
                         : `ምንም ${category} የለም።\n0. ተመለስ`);
-                    // We stay on this screen technically but show result-like text, 
-                    // or better, go to a temporary result screen or just show the text and wait for 0
-                    // Let's keep screen but update text to allow '0' to go back
                 } else {
                     setScreen('MENU_BUY_ITEM');
                     let listStr = ussdLang === 'en' ? `Select ${category}:\n` : `${category} ይምረጡ:\n`;
@@ -233,7 +303,7 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
                 return; 
             }
             
-            // Determine current category based on display text (Hack for simulation state simplicity)
+            // Determine current category based on display text
             let category = '';
             if (displayText.includes('Fertilizer') || displayText.includes('ማዳበሪያ')) category = 'Fertilizer';
             else if (displayText.includes('Seeds') || displayText.includes('ምርጥ ዘር')) category = 'Seeds';
@@ -332,7 +402,7 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
          }, 200);
       }
     }
-  }, [screen, ussdLang, marketPrices, dealerInventory, onRequestSupport, onCreateOffer, onCreateOrder, selectedSellCrop, selectedBuyProduct, goBackToMain, displayText]);
+  }, [screen, ussdLang, marketPrices, dealerInventory, onRequestSupport, onCreateOffer, onCreateOrder, selectedSellCrop, selectedBuyProduct, goBackToMain, displayText, registeredUser, tempRegName]);
 
   // Keypad Handlers
   const handleKeypadPress = useCallback((key: string) => {
@@ -364,7 +434,8 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key;
-      if (['0','1','2','3','4','5','6','7','8','9','*','#'].includes(key)) {
+      // Allow any single character input (letters, numbers) AND SPACE for full names
+      if (key.length === 1) {
         handleKeypadPress(key);
       } else if (key === 'Enter') {
         handleSend();
@@ -407,13 +478,13 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
                     <div className="flex-1 overflow-y-auto custom-scrollbar z-10 text-slate-900 font-semibold leading-tight whitespace-pre-wrap">
                         {loading ? (
                             <div className="flex items-center justify-center h-full">
-                                <span className="animate-pulse">Loading...</span>
+                                <span className="animate-pulse">{t.loading}</span>
                             </div>
                         ) : (
                             isSessionActive ? displayText : (
                                 <div className="h-full flex flex-col justify-end">
                                     <div className="text-right text-lg tracking-widest mb-1">{input}</div>
-                                    <div className="text-center text-[10px] opacity-60 mt-auto">Dial *808#</div>
+                                    <div className="text-center text-[10px] opacity-60 mt-auto">{t.ussd_prompt}</div>
                                 </div>
                             )
                         )}
@@ -422,7 +493,7 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
                     {/* Input Preview for Session */}
                     {isSessionActive && !loading && (
                          <div className="border-t border-black/10 pt-0.5 mt-0.5 flex justify-between items-center text-slate-900 z-10">
-                             <span>Input:</span>
+                             <span>{t.input}:</span>
                              <span className="font-bold">{sessionInput}<span className="animate-pulse">_</span></span>
                          </div>
                     )}
@@ -436,7 +507,7 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
                   className="flex flex-col items-center active:scale-95 transition-transform"
                 >
                     <div className="w-10 h-3 bg-slate-700 rounded-sm mb-1 border-b border-slate-900 shadow-sm"></div>
-                    <span className="text-[8px] uppercase tracking-wider">{isSessionActive ? 'Cancel' : 'Clear'}</span>
+                    <span className="text-[8px] uppercase tracking-wider">{isSessionActive ? t.cancel : t.clear}</span>
                 </button>
                 
                 {/* D-Pad */}
@@ -456,7 +527,7 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
                   className="flex flex-col items-center active:scale-95 transition-transform"
                 >
                     <div className="w-10 h-3 bg-slate-700 rounded-sm mb-1 border-b border-slate-900 shadow-sm"></div>
-                    <span className="text-[8px] uppercase tracking-wider">{isSessionActive ? 'Select' : 'Menu'}</span>
+                    <span className="text-[8px] uppercase tracking-wider">{isSessionActive ? t.select : t.menu}</span>
                 </button>
             </div>
 
@@ -537,15 +608,21 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
                              </div>
                              {screen !== 'RESULT' && (
                                 <div className="px-4 pb-2">
-                                    <div className="relative">
+                                    <div className="relative group cursor-text">
                                         <div className="w-full bg-transparent py-2 text-slate-900 dark:text-white text-sm border-b border-slate-200 dark:border-slate-600 flex items-center h-9 overflow-hidden">
                                             {sessionInput ? (
-                                                <span className="font-medium">{sessionInput}</span>
+                                                <>
+                                                    <span className="font-medium tracking-wide">{sessionInput}</span>
+                                                    {/* Caret after text */}
+                                                    <span className="w-0.5 h-5 bg-emerald-500 ml-0.5 animate-pulse"></span>
+                                                </>
                                             ) : (
-                                                <span className="text-slate-400">Type here...</span>
+                                                <>
+                                                    {/* Caret before placeholder */}
+                                                    <span className="w-0.5 h-5 bg-emerald-500 mr-0.5 animate-pulse"></span>
+                                                    <span className="text-slate-400 font-light italic">Enter response...</span>
+                                                </>
                                             )}
-                                            {/* Simulated Blinking Caret */}
-                                            <span className="w-0.5 h-5 bg-emerald-500 ml-0.5 animate-pulse"></span>
                                         </div>
                                         {/* Focus Bar */}
                                         <div className="absolute bottom-0 left-0 h-[2px] bg-emerald-500 w-full animate-[expandWidth_0.3s_ease-out]"></div>

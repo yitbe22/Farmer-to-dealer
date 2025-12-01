@@ -15,16 +15,26 @@ interface DealerDashboardProps {
   onUpdateImage: (id: string, imageUrl: string) => void;
   onUpdateOfferStatus: (id: string, status: 'Accepted' | 'Rejected') => void;
   onUpdateOrderStatus: (id: string, status: 'Completed' | 'Cancelled') => void;
+  onAddProduct: (product: Omit<Product, 'id' | 'image'>) => void;
   onLogout: () => void;
 }
 
 const DealerDashboard: React.FC<DealerDashboardProps> = ({ 
-  inventory, tickets, prices, offers, orders, language, onUpdatePrice, onUpdateStock, onUpdateImage, onUpdateOfferStatus, onUpdateOrderStatus, onLogout
+  inventory, tickets, prices, offers, orders, language, onUpdatePrice, onUpdateStock, onUpdateImage, onUpdateOfferStatus, onUpdateOrderStatus, onAddProduct, onLogout
 }) => {
   const [activeTab, setActiveTab] = useState<'MARKETPLACE' | 'INVENTORY' | 'ORDERS' | 'REQUESTS' | 'PRICES' | 'HISTORY'>('MARKETPLACE');
   const [searchTerm, setSearchTerm] = useState('');
   const [history, setHistory] = useState<HistoryLog[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Add Product Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductCategory, setNewProductCategory] = useState<'Seeds' | 'Fertilizer' | 'Tools' | 'Pesticide'>('Seeds');
+  const [newProductPrice, setNewProductPrice] = useState('');
+  const [newProductStock, setNewProductStock] = useState('');
+  const [newProductUnit, setNewProductUnit] = useState('');
+
   const t = TRANSLATIONS[language];
 
   const prevInventoryRef = useRef(inventory);
@@ -82,6 +92,28 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
       addHistory('Input Order', `${status} order for ${farmer} (${product})`);
   };
 
+  const handleAddSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newProductName || !newProductPrice || !newProductStock || !newProductUnit) return;
+
+      onAddProduct({
+          name: newProductName,
+          category: newProductCategory,
+          price: parseFloat(newProductPrice),
+          stock: parseInt(newProductStock),
+          unit: newProductUnit
+      });
+      
+      addHistory('Stock Added', `Added ${newProductName}`);
+      
+      // Reset and Close
+      setNewProductName('');
+      setNewProductPrice('');
+      setNewProductStock('');
+      setNewProductUnit('');
+      setIsAddModalOpen(false);
+  };
+
   const getActionIcon = (action: string) => {
     if (action.includes('Stock')) return <Package size={16} className="text-blue-500" />;
     if (action.includes('Price')) return <TrendingUp size={16} className="text-green-500" />;
@@ -101,26 +133,26 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
   ];
 
   return (
-    <div className="h-full flex flex-col bg-slate-50 dark:bg-[#0B1120] transition-colors duration-500 font-sans selection:bg-emerald-500/30">
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-[#0B1120] transition-colors duration-500 font-sans selection:bg-emerald-500/30 relative">
       
       {/* Luxurious Glass Header - Compacted */}
-      <header className="bg-white/70 dark:bg-[#0B1120]/70 backdrop-blur-xl border-b border-slate-200/60 dark:border-white/5 sticky top-0 z-50 transition-all duration-300">
+      <header className="bg-slate-900/95 dark:bg-[#0B1120]/95 backdrop-blur-xl border-b border-slate-800 dark:border-white/5 sticky top-0 z-40 transition-all duration-300 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             
             {/* Logo Area */}
             <div className="flex items-center gap-3 select-none group cursor-pointer">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/40 transition-all duration-500 transform group-hover:scale-105 ring-4 ring-emerald-50 dark:ring-white/5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/40 transition-all duration-500 transform group-hover:scale-105">
                   <ShoppingBag size={16} strokeWidth={2.5} />
               </div>
               <div className="flex flex-col justify-center">
-                  <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-none tracking-tight">Dealer<span className="font-light text-slate-500 dark:text-slate-400 ml-1">Portal</span></h1>
-                  <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] mt-1 opacity-80">GreenAgro</span>
+                  <h1 className="text-lg font-bold text-white leading-none tracking-tight">{t.dealer_portal}</h1>
+                  <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-[0.2em] mt-1 opacity-80">{t.green_agro}</span>
               </div>
             </div>
 
             {/* Desktop Navigation - Compacted */}
-            <nav className="hidden md:flex items-center gap-1 bg-slate-100/50 dark:bg-white/5 p-1 rounded-full border border-slate-200/50 dark:border-white/5 backdrop-blur-md">
+            <nav className="hidden md:flex items-center gap-1 bg-slate-800/50 p-1 rounded-full border border-slate-700/50 backdrop-blur-md">
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -130,11 +162,11 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                     onClick={() => setActiveTab(item.id as any)}
                     className={`px-4 py-2 rounded-full text-xs font-bold transition-all duration-300 flex items-center gap-2 relative overflow-hidden ${
                       isActive 
-                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] ring-1 ring-black/5 dark:ring-white/10' 
-                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5'
+                        ? 'bg-emerald-600 text-white shadow-md' 
+                        : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                     }`}
                   >
-                    <Icon size={14} className={`transition-colors duration-300 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
+                    <Icon size={14} className={`transition-colors duration-300 ${isActive ? 'text-white' : ''}`} />
                     {item.label}
                   </button>
                 );
@@ -144,23 +176,23 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
             {/* Actions */}
             <div className="flex items-center gap-3">
                {/* Notifications (Mock) */}
-               <button className="hidden md:flex w-9 h-9 rounded-full items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors relative">
+               <button className="hidden md:flex w-9 h-9 rounded-full items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors relative">
                    <Bell size={18} />
-                   <span className="absolute top-2 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full border border-white dark:border-[#0B1120]"></span>
+                   <span className="absolute top-2 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full border border-slate-900"></span>
                </button>
 
               <button 
                 onClick={onLogout}
-                className="hidden md:flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-red-600 transition-colors px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-full"
+                className="hidden md:flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-red-400 transition-colors px-3 py-1.5 hover:bg-slate-800 rounded-full"
               >
                 <LogOut size={16} />
-                <span>Logout</span>
+                <span>{t.logout}</span>
               </button>
               
               {/* Mobile Hamburger */}
               <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors active:scale-95"
+                className="md:hidden p-2 text-slate-300 hover:bg-slate-800 rounded-xl transition-colors active:scale-95"
               >
                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
@@ -170,7 +202,7 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
 
         {/* Mobile Menu Dropdown */}
         {isMobileMenuOpen && (
-          <div className="md:hidden absolute top-16 left-0 w-full bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 shadow-2xl animate-in slide-in-from-top-2 z-40">
+          <div className="md:hidden absolute top-16 left-0 w-full bg-slate-900/95 backdrop-blur-xl border-b border-slate-700 shadow-2xl animate-in slide-in-from-top-2 z-40">
             <div className="p-4 space-y-1">
               {menuItems.map((item) => {
                 const Icon = item.icon;
@@ -181,23 +213,23 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                     onClick={() => { setActiveTab(item.id as any); setIsMobileMenuOpen(false); }}
                     className={`w-full text-left px-5 py-3 rounded-2xl text-sm font-bold flex items-center gap-4 transition-all ${
                       isActive 
-                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 shadow-sm' 
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'
+                        ? 'bg-emerald-600/20 text-emerald-400 shadow-sm' 
+                        : 'text-slate-400 hover:bg-slate-800'
                     }`}
                   >
-                    <Icon size={18} className={isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'} />
+                    <Icon size={18} className={isActive ? 'text-emerald-400' : 'text-slate-500'} />
                     {item.label}
                     {isActive && <ChevronRight className="ml-auto opacity-50" size={16} />}
                   </button>
                 );
               })}
-              <div className="border-t border-slate-100 dark:border-white/5 my-2 pt-2">
+              <div className="border-t border-slate-700 my-2 pt-2">
                 <button 
                   onClick={onLogout}
-                  className="w-full text-left px-5 py-3 rounded-2xl text-sm font-bold flex items-center gap-4 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                  className="w-full text-left px-5 py-3 rounded-2xl text-sm font-bold flex items-center gap-4 text-red-400 hover:bg-red-900/10 transition-colors"
                 >
                   <LogOut size={18} />
-                  Logout
+                  {t.logout}
                 </button>
               </div>
             </div>
@@ -219,11 +251,11 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/20 blur-[80px] rounded-full animate-pulse"></div>
                    
                    <div className="relative z-10 max-w-xl">
-                       <h2 className="text-3xl font-bold mb-3 tracking-tight leading-tight">Marketplace Overview</h2>
-                       <p className="text-slate-400 text-sm leading-relaxed max-w-md">Connect directly with local farmers. Acquire premium crops at fair market rates to restock your inventory effectively.</p>
+                       <h2 className="text-3xl font-bold mb-3 tracking-tight leading-tight">{t.marketplace_overview}</h2>
+                       <p className="text-slate-400 text-sm leading-relaxed max-w-md">{t.marketplace_desc}</p>
                        <div className="mt-6 flex gap-3">
-                           <button className="px-5 py-2.5 bg-white text-slate-900 rounded-xl font-bold text-xs hover:bg-emerald-50 transition-colors">View Reports</button>
-                           <button className="px-5 py-2.5 bg-white/10 text-white rounded-xl font-bold text-xs backdrop-blur hover:bg-white/20 transition-colors">Manage Settings</button>
+                           <button className="px-5 py-2.5 bg-white text-slate-900 rounded-xl font-bold text-xs hover:bg-emerald-50 transition-colors">{t.view_reports}</button>
+                           <button className="px-5 py-2.5 bg-white/10 text-white rounded-xl font-bold text-xs backdrop-blur hover:bg-white/20 transition-colors">{t.manage_settings}</button>
                        </div>
                    </div>
                    
@@ -231,11 +263,11 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                    <div className="flex gap-4 relative z-10">
                        <div className="flex flex-col items-center p-5 bg-white/5 backdrop-blur-md rounded-3xl border border-white/10 min-w-[110px] hover:bg-white/10 transition-colors cursor-default">
                            <span className="text-3xl font-bold text-emerald-400 tracking-tighter">{offers.filter(o => o.status === 'Pending').length}</span>
-                           <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold mt-2">New Offers</span>
+                           <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold mt-2">{t.new_offers}</span>
                        </div>
                        <div className="flex flex-col items-center p-5 bg-white/5 backdrop-blur-md rounded-3xl border border-white/10 min-w-[110px] hover:bg-white/10 transition-colors cursor-default">
                            <span className="text-3xl font-bold text-white tracking-tighter">{offers.filter(o => o.status === 'Accepted').length}</span>
-                           <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold mt-2">Acquired</span>
+                           <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold mt-2">{t.acquired}</span>
                        </div>
                    </div>
                </div>
@@ -243,7 +275,7 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                {/* Offers Grid */}
                <div>
                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Pending Farmer Offers</h3>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{t.pending_offers}</h3>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                    {offers.filter(o => o.status === 'Pending').map((offer, idx) => {
@@ -263,17 +295,17 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                                        </div>
                                    </div>
                                    <span className="text-[10px] font-bold bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400 px-3 py-1.5 rounded-full uppercase tracking-wide border border-amber-100 dark:border-amber-900/30">
-                                       Pending
+                                       {t.pending}
                                    </span>
                                </div>
 
                                <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-slate-50 dark:bg-black/20 rounded-2xl border border-slate-100 dark:border-white/5">
                                    <div>
-                                       <div className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold tracking-wider mb-1">Quantity</div>
+                                       <div className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold tracking-wider mb-1">{t.quantity}</div>
                                        <div className="text-xl font-mono font-bold text-slate-800 dark:text-slate-200 tracking-tight">{offer.quantity} <span className="text-sm font-sans font-medium text-slate-400">Qtl</span></div>
                                    </div>
                                    <div className="text-right">
-                                       <div className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold tracking-wider mb-1">Value</div>
+                                       <div className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold tracking-wider mb-1">{t.value}</div>
                                        <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">{estValue.toLocaleString()}</div>
                                    </div>
                                </div>
@@ -283,13 +315,13 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                                        onClick={() => handleProcessOffer(offer.id, 'Rejected', offer.farmerName, offer.crop)}
                                        className="py-3 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 hover:border-red-200 dark:hover:border-red-900/30 transition-all active:scale-95"
                                    >
-                                       Ignore
+                                       {t.ignore}
                                    </button>
                                    <button 
                                        onClick={() => handleProcessOffer(offer.id, 'Accepted', offer.farmerName, offer.crop)}
-                                       className="py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-bold hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-500/30 active:scale-95 transition-all"
+                                       className="py-3 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-500 shadow-lg shadow-emerald-500/30 active:scale-95 transition-all"
                                    >
-                                       Accept Offer
+                                       {t.accept_offer}
                                    </button>
                                </div>
                           </div>
@@ -298,7 +330,7 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                    {offers.filter(o => o.status === 'Pending').length === 0 && (
                        <div className="col-span-full py-24 text-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-[2rem] bg-slate-50/50 dark:bg-white/[0.02]">
                            <ShoppingBag size={56} className="mx-auto mb-4 opacity-10" />
-                           <p className="text-base font-medium opacity-60">No pending offers at the moment.</p>
+                           <p className="text-base font-medium opacity-60">{t.no_pending_offers}</p>
                        </div>
                    )}
                  </div>
@@ -312,7 +344,7 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                <div className="flex justify-between items-center pb-6 border-b border-slate-200 dark:border-white/5">
                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{t.orders}</h2>
                    <div className="px-4 py-2 bg-slate-100 dark:bg-white/5 rounded-full text-sm text-slate-600 dark:text-slate-300 font-semibold border border-slate-200 dark:border-white/5">
-                       {orders.filter(o => o.status === 'Pending').length} Pending Orders
+                       {orders.filter(o => o.status === 'Pending').length} {t.pending_orders}
                    </div>
                </div>
                
@@ -326,7 +358,7 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                                <div>
                                    <h3 className="font-bold text-slate-900 dark:text-white text-lg">{order.productName}</h3>
                                    <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1.5 font-medium">
-                                       <span className="bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/5">{order.quantity} units</span>
+                                       <span className="bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/5">{order.quantity} {t.unit}s</span>
                                        <span className="opacity-40">•</span>
                                        <span>{order.farmerName}</span>
                                        <span className="opacity-40">•</span>
@@ -337,7 +369,7 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                            
                            <div className="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end bg-slate-50 dark:bg-black/20 md:bg-transparent p-5 md:p-0 rounded-xl md:rounded-none border border-slate-100 dark:border-white/5 md:border-none">
                                <div className="text-right">
-                                   <div className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Total</div>
+                                   <div className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">{t.total}</div>
                                    <div className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">ETB {order.totalPrice.toLocaleString()}</div>
                                </div>
 
@@ -346,7 +378,7 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                                        <button 
                                           onClick={() => handleProcessOrder(order.id, 'Cancelled', order.farmerName, order.productName)}
                                           className="p-3 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all hover:rotate-90 active:scale-95"
-                                          title="Reject Order"
+                                          title={t.reject_order}
                                        >
                                            <X size={20} />
                                        </button>
@@ -370,7 +402,7 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                        </div>
                    ))}
                    {orders.length === 0 && (
-                       <div className="py-24 text-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-[2rem]">No input orders yet.</div>
+                       <div className="py-24 text-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-[2rem]">{t.no_orders_yet}</div>
                    )}
                </div>
             </div>
@@ -397,7 +429,10 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                         />
                     </div>
 
-                    <button className="flex items-center justify-center gap-2 bg-slate-900 dark:bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-slate-800 dark:hover:bg-emerald-500 transition-all shadow-lg shadow-slate-900/20 dark:shadow-emerald-600/20 active:scale-95 text-sm font-bold whitespace-nowrap">
+                    <button 
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="flex items-center justify-center gap-2 bg-slate-900 dark:bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-slate-800 dark:hover:bg-emerald-500 transition-all shadow-lg shadow-slate-900/20 dark:shadow-emerald-600/20 active:scale-95 text-sm font-bold whitespace-nowrap"
+                    >
                        <Plus size={18} /> {t.add_product}
                     </button>
                 </div>
@@ -407,7 +442,7 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                 {inventory.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map((product, idx) => (
                   <div key={product.id} style={{animationDelay: `${idx * 50}ms`}} className="group bg-white dark:bg-[#111827] rounded-[2rem] shadow-sm border border-slate-200 dark:border-white/5 hover:shadow-2xl hover:shadow-emerald-500/10 hover:border-emerald-500/30 transition-all duration-500 ease-out overflow-hidden flex flex-col h-full hover:-translate-y-2 animate-in fade-in slide-in-from-bottom-4">
                     
-                    <div className="h-48 bg-slate-100 dark:bg-black/40 relative overflow-hidden">
+                    <div className="h-48 bg-slate-100 dark:bg-black/40 relative overflow-hidden group/image">
                       {product.image ? (
                         <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 group-hover:brightness-110" />
                       ) : (
@@ -418,6 +453,15 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                       
                       {/* Gradient Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
+                      
+                      {/* Image Upload Overlay */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/image:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                        <label className="cursor-pointer bg-white/20 hover:bg-white/30 text-white p-3 rounded-full border border-white/40 shadow-xl transition-all active:scale-95 flex items-center gap-2 px-4 backdrop-blur-md">
+                          <Upload size={18} />
+                          <span className="text-xs font-bold">{t.upload_image}</span>
+                          <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(product.id, e)} />
+                        </label>
+                      </div>
 
                       <div className="absolute top-4 left-4">
                         <span className="bg-white/90 dark:bg-black/60 backdrop-blur-md text-slate-900 dark:text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-lg border border-white/20 shadow-sm">
@@ -428,7 +472,7 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                       <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
                           <div>
                              <h3 className="font-bold text-lg text-white leading-snug shadow-black drop-shadow-md">{product.name}</h3>
-                             <p className="text-white/80 text-xs font-medium mt-0.5">Unit: {product.unit}</p>
+                             <p className="text-white/80 text-xs font-medium mt-0.5">{t.unit}: {product.unit}</p>
                           </div>
                       </div>
                     </div>
@@ -436,7 +480,7 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                     <div className="p-6 flex flex-col flex-1">
                       <div className="flex justify-between items-center mb-6">
                            <div className="flex flex-col">
-                               <span className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Price</span>
+                               <span className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">{t.price}</span>
                                <span className="text-xl font-bold text-slate-900 dark:text-white">ETB {product.price.toLocaleString()}</span>
                            </div>
                            <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-white/5 flex items-center justify-center border border-slate-100 dark:border-white/5">
@@ -557,7 +601,7 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                             onClick={() => setHistory([])}
                             className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 transition-all flex items-center gap-2 border border-transparent hover:border-red-100 dark:hover:border-red-900/30"
                         >
-                            <Trash2 size={14} /> Clear Log
+                            <Trash2 size={14} /> {t.clear_log}
                         </button>
                     )}
                 </div>
@@ -585,7 +629,7 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                         <div className="w-20 h-20 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
                             <History size={32} className="opacity-40" strokeWidth={1.5} />
                         </div>
-                        <p className="text-base font-medium opacity-60">No recent activity recorded.</p>
+                        <p className="text-base font-medium opacity-60">{t.no_activity}</p>
                     </div>
                 )}
                 </div>
@@ -594,6 +638,116 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
 
         </div>
       </main>
+
+      {/* Add Product Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center shrink-0">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Plus className="text-emerald-500" size={24} /> {t.add_product}
+                    </h3>
+                    <button 
+                        onClick={() => setIsAddModalOpen(false)}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+                
+                <div className="p-6 overflow-y-auto custom-scrollbar">
+                    <form onSubmit={handleAddSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Product Name</label>
+                            <input 
+                                type="text"
+                                value={newProductName}
+                                onChange={(e) => setNewProductName(e.target.value)}
+                                className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all dark:text-white"
+                                placeholder="e.g. Improved Seeds"
+                                required
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Category</label>
+                            <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                                {['Seeds', 'Fertilizer', 'Tools', 'Pesticide'].map((cat) => (
+                                    <button
+                                        key={cat}
+                                        type="button"
+                                        onClick={() => setNewProductCategory(cat as any)}
+                                        className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all whitespace-nowrap ${
+                                            newProductCategory === cat 
+                                            ? 'bg-emerald-50 border-emerald-500 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-500/50 dark:text-emerald-400' 
+                                            : 'bg-white border-slate-200 text-slate-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                        }`}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Price (ETB)</label>
+                                <input 
+                                    type="number"
+                                    value={newProductPrice}
+                                    onChange={(e) => setNewProductPrice(e.target.value)}
+                                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all dark:text-white"
+                                    placeholder="0.00"
+                                    min="0"
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Stock Qty</label>
+                                <input 
+                                    type="number"
+                                    value={newProductStock}
+                                    onChange={(e) => setNewProductStock(e.target.value)}
+                                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all dark:text-white"
+                                    placeholder="0"
+                                    min="0"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unit</label>
+                            <input 
+                                type="text"
+                                value={newProductUnit}
+                                onChange={(e) => setNewProductUnit(e.target.value)}
+                                className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all dark:text-white"
+                                placeholder="e.g. kg, quintal, pcs"
+                                required
+                            />
+                        </div>
+
+                        <div className="pt-4 flex gap-3">
+                            <button 
+                                type="button" 
+                                onClick={() => setIsAddModalOpen(false)}
+                                className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-bold transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit"
+                                className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                            >
+                                Add Product
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 };

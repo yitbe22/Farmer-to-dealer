@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Headset, MessageSquare, CheckCircle, Clock, Zap, User } from 'lucide-react';
 import { Ticket, Language } from '../types';
@@ -15,12 +16,12 @@ const CallCenterDashboard: React.FC<CallCenterDashboardProps> = ({ tickets, onRe
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const t = TRANSLATIONS[language];
+  const t = TRANSLATIONS[language as Language];
 
   const handleGetAiHelp = async () => {
     if (!selectedTicket) return;
     setIsAnalyzing(true);
-    const suggestion = await analyzeSupportTicket(selectedTicket.issue);
+    const suggestion = await analyzeSupportTicket(selectedTicket.issue, language as Language);
     setAiSuggestion(suggestion);
     setIsAnalyzing(false);
   };

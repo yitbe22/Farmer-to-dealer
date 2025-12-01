@@ -1,15 +1,18 @@
 
 import React, { useRef, useEffect } from 'react';
 import { Signal, Battery, ChevronUp, ChevronDown, Phone, MessageSquare, X } from 'lucide-react';
-import { SMSMessage } from '../types';
+import { SMSMessage, Language } from '../types';
+import { TRANSLATIONS } from '../constants';
 
 interface FeaturePhoneProps {
   messages: SMSMessage[];
   farmerName: string;
+  language?: Language;
 }
 
-const FeaturePhone: React.FC<FeaturePhoneProps> = ({ messages, farmerName }) => {
+const FeaturePhone: React.FC<FeaturePhoneProps> = ({ messages, farmerName, language = 'en' }) => {
   const screenRef = useRef<HTMLDivElement>(null);
+  const t = TRANSLATIONS[language];
 
   // Auto-scroll to new messages
   useEffect(() => {
@@ -62,7 +65,7 @@ const FeaturePhone: React.FC<FeaturePhoneProps> = ({ messages, farmerName }) => 
                     <MessageSquare size={10} className="text-white" />
                 </div>
                 <div className="flex flex-col">
-                    <span className="text-[9px] font-bold text-white leading-none">Messages</span>
+                    <span className="text-[9px] font-bold text-white leading-none">{t.messages}</span>
                     <span className="text-[7px] text-emerald-100 leading-none">AgriConnect</span>
                 </div>
             </div>
@@ -72,7 +75,7 @@ const FeaturePhone: React.FC<FeaturePhoneProps> = ({ messages, farmerName }) => 
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center opacity-30 text-white space-y-1">
                   <MessageSquare size={24} />
-                  <span className="text-[10px]">No Messages</span>
+                  <span className="text-[10px]">{t.no_messages}</span>
                 </div>
               ) : (
                 messages.map((msg) => (
@@ -99,7 +102,7 @@ const FeaturePhone: React.FC<FeaturePhoneProps> = ({ messages, farmerName }) => 
         <div className="w-full px-4 mb-4 flex justify-between items-center text-slate-400 shrink-0 relative">
           <button className="flex flex-col items-center group active:text-white transition-colors">
             <div className="w-10 h-0.5 bg-slate-600 mb-1 group-active:bg-emerald-500 transition-colors"></div>
-            <span className="text-[8px] font-bold tracking-wider">MENU</span>
+            <span className="text-[8px] font-bold tracking-wider">{t.menu}</span>
           </button>
           
           {/* D-Pad */}
@@ -119,7 +122,7 @@ const FeaturePhone: React.FC<FeaturePhoneProps> = ({ messages, farmerName }) => 
 
           <button className="flex flex-col items-center group active:text-white transition-colors">
             <div className="w-10 h-0.5 bg-slate-600 mb-1 group-active:bg-red-500 transition-colors"></div>
-            <span className="text-[8px] font-bold tracking-wider">BACK</span>
+            <span className="text-[8px] font-bold tracking-wider">{t.back}</span>
           </button>
         </div>
 
