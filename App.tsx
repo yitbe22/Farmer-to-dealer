@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
-import { Smartphone, Store, Headset, Sprout, Moon, Sun, Globe, Phone as PhoneIcon, Grip, MonitorSmartphone } from 'lucide-react';
+import { Smartphone, Store, Headset, Sprout, Moon, Sun, Globe, Phone as PhoneIcon, Grip, MonitorSmartphone, X } from 'lucide-react';
 import USSDSimulator from './components/USSDSimulator';
 import SMSSimulator from './components/SMSSimulator';
 import DealerDashboard from './components/DealerDashboard';
 import CallCenterDashboard from './components/CallCenterDashboard';
 import Login from './components/Login';
-import FeaturePhone from './components/FeaturePhone';
 import { UserRole, Product, Ticket, MarketPrice, Language, CropOffer, InputOrder, SMSMessage } from './types';
 import { INITIAL_PRODUCTS, INITIAL_PRICES, INITIAL_TICKETS, INITIAL_OFFERS, INITIAL_ORDERS, TRANSLATIONS, ETHIOPIAN_NAMES } from './constants';
 import { generateFarmingTip, generateSMSReply } from './services/geminiService';
@@ -17,8 +17,10 @@ const App: React.FC = () => {
   const [farmerDeviceType, setFarmerDeviceType] = useState<'SMARTPHONE' | 'FEATURE_PHONE'>('SMARTPHONE');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [language, setLanguage] = useState<Language>('en');
-  const [showFarmerPhone, setShowFarmerPhone] = useState(false);
   
+  // Notification State
+  const [activeNotification, setActiveNotification] = useState<{title: string, message: string} | null>(null);
+
   // Auth State
   const [isDealerLoggedIn, setIsDealerLoggedIn] = useState(false);
   
@@ -31,7 +33,13 @@ const App: React.FC = () => {
   
   // Lifted SMS State
   const [smsMessages, setSmsMessages] = useState<SMSMessage[]>([
-    { id: '1', sender: 'System', text: 'ALERT: Heavy rains expected in Oromia region. Secure Teff harvest.', timestamp: new Date().toISOString() }
+    { 
+      id: '1', 
+      sender: 'System', 
+      text: 'ALERT: Heavy rains expected in Oromia region. Secure Teff harvest.', 
+      timestamp: new Date().toISOString(),
+      translationKey: 'system_alert' // Enable dynamic translation
+    }
   ]);
 
   const t = TRANSLATIONS[language];
@@ -39,26 +47,22 @@ const App: React.FC = () => {
   // Initialize Farming Tip and Update Initial Alert on Language Change
   useEffect(() => {
     const fetchTip = async () => {
-      // 1. Update/Translate the initial ALERT if it exists
+      // 1. Update/Translate the initial ALERT if it exists (fallback if translation key not used in UI yet)
       setSmsMessages(prev => {
-        const hasAlert = prev.some(m => m.id === '1');
-        if (hasAlert) {
-            return prev.map(m => m.id === '1' ? { ...m, text: t.system_alert || m.text } : m);
-        }
-        return prev;
+        // Since we added translationKey, the UI handles it, but we can update text for good measure or legacy view
+        return prev.map(m => m.id === '1' ? { ...m, text: t.system_alert || m.text } : m);
       });
 
       // 2. Add/Update Daily Tip
       const tip = await generateFarmingTip(language);
       setSmsMessages(prev => {
         const prefix = language === 'en' ? 'DAILY TIP' : 'የቀን ምክር';
-        // Avoid adding duplicate tip for the current language session, but we want to show it
-        const alreadyHasTip = prev.some(m => m.text.includes(prefix) && m.text.includes(tip));
         
-        if (alreadyHasTip) return prev;
+        // Remove existing tip to prevent stacking (Use fixed ID 'daily-tip')
+        const filtered = prev.filter(m => m.id !== 'daily-tip');
         
-        return [...prev, {
-          id: Date.now().toString(),
+        return [...filtered, {
+          id: 'daily-tip',
           sender: 'System',
           text: `${prefix}: ${tip}`,
           timestamp: new Date().toISOString()
@@ -105,20 +109,20 @@ const App: React.FC = () => {
     setInventory(prev => prev.map(p => p.id === id ? { ...p, image: imageUrl } : p));
   };
 
-  const handleAddProduct = (productData: Omit<Product, 'id' | 'image'>) => {
+  const handleAddProduct = (productData: Omit<Product, 'id'>) => {
     const newProduct: Product = {
       id: Date.now().toString(),
       ...productData,
-      image: undefined // Will use placeholder
     };
     setInventory(prev => [newProduct, ...prev]);
   };
 
-  const handleCreateTicket = (issue: string) => {
+  const handleCreateTicket = (issue: string, farmerName?: string) => {
+    const nameToUse = farmerName || 'Mobile User';
     const newTicket: Ticket = {
       id: `T-${Math.floor(Math.random() * 10000)}`,
-      farmerName: 'Mobile User',
-      phoneNumber: '+251...',
+      farmerName: nameToUse,
+      phoneNumber: '+251 911 *** ***',
       issue,
       status: 'Open',
       timestamp: new Date().toISOString(),
@@ -180,12 +184,17 @@ const App: React.FC = () => {
             id: Date.now().toString(),
             sender: 'System',
             text: messageText,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            translationKey: 'sms_accepted',
+            translationParams: {
+                qty: offer.quantity.toString(),
+                crop: offer.crop,
+                total: total.toLocaleString()
+            }
           };
           
           setSmsMessages(prev => [...prev, sms]);
-          // Open the phone widget to show the magic
-          setShowFarmerPhone(true);
+          setActiveNotification({ title: 'Offer Accepted SMS', message: messageText });
         }
       }
   };
@@ -207,11 +216,17 @@ const App: React.FC = () => {
                 id: Date.now().toString(),
                 sender: 'System',
                 text: messageText,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                translationKey: 'sms_order_fulfilled',
+                translationParams: {
+                    qty: order.quantity.toString(),
+                    product: order.productName,
+                    total: order.totalPrice.toLocaleString()
+                }
             };
             
             setSmsMessages(prev => [...prev, sms]);
-            setShowFarmerPhone(true);
+            setActiveNotification({ title: 'Order Fulfilled SMS', message: messageText });
         }
       }
   };
@@ -222,15 +237,22 @@ const App: React.FC = () => {
     // Send SMS with resolution
     const ticket = tickets.find(t => t.id === id);
     if (ticket) {
+      const text = `SUPPORT UPDATE: Your ticket regarding "${ticket.issue.substring(0, 15)}..." has been resolved. Notes: ${resolution}`;
       const sms: SMSMessage = {
         id: Date.now().toString(),
         sender: 'System',
-        text: `SUPPORT UPDATE: Your ticket regarding "${ticket.issue.substring(0, 15)}..." has been resolved. Notes: ${resolution}`,
+        text: text,
         timestamp: new Date().toISOString()
       };
       setSmsMessages(prev => [...prev, sms]);
-      setShowFarmerPhone(true);
+      setActiveNotification({ title: 'Support Resolved SMS', message: text });
     }
+  };
+
+  const handleNotificationClick = () => {
+    setRole(UserRole.FARMER);
+    setFarmerView('SMS');
+    setActiveNotification(null);
   };
 
   return (
@@ -407,17 +429,26 @@ const App: React.FC = () => {
             />
           )}
 
-          {/* Floating Farmer Feature Phone Widget */}
-          {showFarmerPhone && (
-            <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-20 fade-in duration-500 hidden md:block transform scale-75 origin-bottom-right">
-              <div className="relative group">
-                <button 
-                  onClick={() => setShowFarmerPhone(false)}
-                  className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1.5 shadow-lg hover:bg-red-600 z-50 ring-2 ring-white dark:ring-slate-900 transition-transform hover:scale-110"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-                <FeaturePhone messages={smsMessages} farmerName="Sim Phone" language={language} />
+          {/* Toast Notification (Replaces FeaturePhone Popup) */}
+          {activeNotification && (
+            <div 
+              onClick={handleNotificationClick}
+              className="fixed bottom-6 right-6 z-50 w-80 bg-slate-900 text-white rounded-lg shadow-2xl p-4 cursor-pointer hover:bg-slate-800 transition-all border-l-4 border-emerald-500 animate-in slide-in-from-right-10"
+            >
+              <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-bold text-sm mb-1 text-emerald-400 flex items-center gap-2">
+                      <Smartphone size={14} /> {activeNotification.title}
+                    </h4>
+                    <p className="text-xs text-slate-300 line-clamp-2">{activeNotification.message}</p>
+                    <p className="text-[10px] text-slate-500 mt-2 font-mono">Tap to view in SMS</p>
+                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setActiveNotification(null); }}
+                    className="text-slate-500 hover:text-white p-1"
+                  >
+                    <X size={14} />
+                  </button>
               </div>
             </div>
           )}

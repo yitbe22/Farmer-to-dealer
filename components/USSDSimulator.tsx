@@ -7,7 +7,7 @@ import { TRANSLATIONS } from '../constants';
 interface USSDSimulatorProps {
   marketPrices: MarketPrice[];
   dealerInventory: Product[];
-  onRequestSupport: (issue: string) => void;
+  onRequestSupport: (issue: string, farmerName?: string) => void;
   onCreateOffer: (crop: string, quantity: number, farmerName?: string) => void;
   onCreateOrder: (productId: string, quantity: number) => void;
   language: Language;
@@ -59,12 +59,12 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
       setLoading(true);
       setTimeout(() => {
         setLoading(false);
-        if (currentInput === '*808#') {
+        if (currentInput === '*707#') {
           setScreen('MENU_LANG');
           setDisplayText("AgriConnect Ethiopia\n1. English\n2. አማርኛ (Amharic)");
         } else {
           setScreen('RESULT');
-          setDisplayText("Connection Error or Invalid MMI Code.\nTry *808#");
+          setDisplayText("Connection Error or Invalid MMI Code.\nTry *707#");
         }
         setSessionInput('');
       }, 300); // Reduced delay for faster initial load
@@ -380,7 +380,8 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
       setLoading(true);
       setTimeout(() => {
         setLoading(false);
-        onRequestSupport(currentInput);
+        // Pass the registered user name if available
+        onRequestSupport(currentInput, registeredUser?.name);
         setScreen('RESULT');
         setDisplayText(ussdLang === 'en' ? "Report Sent!\n0. Exit" : "ሪፖርት ተልኳል!\n0. ውጣ");
         setSessionInput('');
@@ -433,6 +434,11 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // If typing in a real input (Touch Smartphone), ignore global key presses
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
       const key = e.key;
       // Allow any single character input (letters, numbers) AND SPACE for full names
       if (key.length === 1) {
@@ -609,25 +615,22 @@ const USSDSimulator: React.FC<USSDSimulatorProps> = ({
                              {screen !== 'RESULT' && (
                                 <div className="px-4 pb-2">
                                     <div className="relative group cursor-text">
-                                        <div className="w-full bg-transparent py-2 text-slate-900 dark:text-white text-sm border-b border-slate-200 dark:border-slate-600 flex items-center h-9 overflow-hidden">
-                                            {sessionInput ? (
-                                                <>
-                                                    <span className="font-medium tracking-wide">{sessionInput}</span>
-                                                    {/* Caret after text */}
-                                                    <span className="w-0.5 h-5 bg-emerald-500 ml-0.5 animate-pulse"></span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    {/* Caret before placeholder */}
-                                                    <span className="w-0.5 h-5 bg-emerald-500 mr-0.5 animate-pulse"></span>
-                                                    <span className="text-slate-400 font-light italic">Enter response...</span>
-                                                </>
-                                            )}
-                                        </div>
-                                        {/* Focus Bar */}
-                                        <div className="absolute bottom-0 left-0 h-[2px] bg-emerald-500 w-full animate-[expandWidth_0.3s_ease-out]"></div>
+                                        <input
+                                            type="text"
+                                            value={sessionInput}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (val.length <= 20) setSessionInput(val);
+                                            }}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                            placeholder="Enter response..."
+                                            className="w-full bg-transparent py-2 text-slate-900 dark:text-white text-sm border-b border-slate-200 dark:border-slate-600 focus:border-emerald-500 outline-none placeholder:text-slate-400 placeholder:font-light placeholder:italic caret-emerald-500 transition-colors peer"
+                                            autoFocus
+                                        />
+                                        {/* Animated Focus Bar */}
+                                        <div className="absolute bottom-0 left-0 h-[2px] bg-emerald-500 w-0 transition-all duration-300 ease-out peer-focus:w-full"></div>
                                     </div>
-                                    <div className="text-right text-xs text-slate-400 mt-1 h-4">{sessionInput.length}/10</div>
+                                    <div className="text-right text-xs text-slate-400 mt-1 h-4">{sessionInput.length}/20</div>
                                 </div>
                              )}
                              <div className="grid grid-cols-2 border-t border-slate-200 dark:border-slate-700 divide-x divide-slate-200 dark:divide-slate-700">

@@ -1,5 +1,6 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Package, TrendingUp, Users, Plus, Search, Image as ImageIcon, History, Upload, Menu, X, LogOut, ChevronRight, ShoppingBag, Check, XCircle, ShoppingCart, FileText, DollarSign, Trash2, Bell } from 'lucide-react';
+import { Package, TrendingUp, Users, Plus, Search, Image as ImageIcon, History, Upload, Menu, X, LogOut, ChevronRight, ShoppingBag, Check, XCircle, ShoppingCart, FileText, DollarSign, Trash2, Bell, BarChart3, Settings } from 'lucide-react';
 import { Product, Ticket, MarketPrice, HistoryLog, Language, CropOffer, InputOrder } from '../types';
 import { TRANSLATIONS } from '../constants';
 
@@ -15,7 +16,7 @@ interface DealerDashboardProps {
   onUpdateImage: (id: string, imageUrl: string) => void;
   onUpdateOfferStatus: (id: string, status: 'Accepted' | 'Rejected') => void;
   onUpdateOrderStatus: (id: string, status: 'Completed' | 'Cancelled') => void;
-  onAddProduct: (product: Omit<Product, 'id' | 'image'>) => void;
+  onAddProduct: (product: Omit<Product, 'id'>) => void;
   onLogout: () => void;
 }
 
@@ -27,13 +28,18 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
   const [history, setHistory] = useState<HistoryLog[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Add Product Modal State
+  // Modals State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isReportsOpen, setIsReportsOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Add Product Form State
   const [newProductName, setNewProductName] = useState('');
   const [newProductCategory, setNewProductCategory] = useState<'Seeds' | 'Fertilizer' | 'Tools' | 'Pesticide'>('Seeds');
   const [newProductPrice, setNewProductPrice] = useState('');
   const [newProductStock, setNewProductStock] = useState('');
   const [newProductUnit, setNewProductUnit] = useState('');
+  const [newProductImage, setNewProductImage] = useState<string | undefined>(undefined);
 
   const t = TRANSLATIONS[language];
 
@@ -82,6 +88,14 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
     }
   };
 
+  const handleNewProductImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setNewProductImage(url);
+    }
+  };
+
   const handleProcessOffer = (id: string, status: 'Accepted' | 'Rejected', farmer: string, crop: string) => {
       onUpdateOfferStatus(id, status);
       addHistory('Produce Bought', `${status} offer from ${farmer} for ${crop}`);
@@ -101,7 +115,8 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
           category: newProductCategory,
           price: parseFloat(newProductPrice),
           stock: parseInt(newProductStock),
-          unit: newProductUnit
+          unit: newProductUnit,
+          image: newProductImage
       });
       
       addHistory('Stock Added', `Added ${newProductName}`);
@@ -111,6 +126,7 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
       setNewProductPrice('');
       setNewProductStock('');
       setNewProductUnit('');
+      setNewProductImage(undefined);
       setIsAddModalOpen(false);
   };
 
@@ -254,8 +270,18 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                        <h2 className="text-3xl font-bold mb-3 tracking-tight leading-tight">{t.marketplace_overview}</h2>
                        <p className="text-slate-400 text-sm leading-relaxed max-w-md">{t.marketplace_desc}</p>
                        <div className="mt-6 flex gap-3">
-                           <button className="px-5 py-2.5 bg-white text-slate-900 rounded-xl font-bold text-xs hover:bg-emerald-50 transition-colors">{t.view_reports}</button>
-                           <button className="px-5 py-2.5 bg-white/10 text-white rounded-xl font-bold text-xs backdrop-blur hover:bg-white/20 transition-colors">{t.manage_settings}</button>
+                           <button 
+                              onClick={() => setIsReportsOpen(true)}
+                              className="px-5 py-2.5 bg-white text-slate-900 rounded-xl font-bold text-xs hover:bg-emerald-50 transition-colors flex items-center gap-2"
+                           >
+                             <BarChart3 size={14} /> {t.view_reports}
+                           </button>
+                           <button 
+                              onClick={() => setIsSettingsOpen(true)}
+                              className="px-5 py-2.5 bg-white/10 text-white rounded-xl font-bold text-xs backdrop-blur hover:bg-white/20 transition-colors flex items-center gap-2"
+                           >
+                              <Settings size={14} /> {t.manage_settings}
+                           </button>
                        </div>
                    </div>
                    
@@ -453,15 +479,6 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                       
                       {/* Gradient Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
-                      
-                      {/* Image Upload Overlay */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/image:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                        <label className="cursor-pointer bg-white/20 hover:bg-white/30 text-white p-3 rounded-full border border-white/40 shadow-xl transition-all active:scale-95 flex items-center gap-2 px-4 backdrop-blur-md">
-                          <Upload size={18} />
-                          <span className="text-xs font-bold">{t.upload_image}</span>
-                          <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(product.id, e)} />
-                        </label>
-                      </div>
 
                       <div className="absolute top-4 left-4">
                         <span className="bg-white/90 dark:bg-black/60 backdrop-blur-md text-slate-900 dark:text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-lg border border-white/20 shadow-sm">
@@ -728,6 +745,22 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
                             />
                         </div>
 
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.upload_image}</label>
+                            <div className="flex items-center gap-3">
+                                {newProductImage && (
+                                    <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-600">
+                                        <img src={newProductImage} alt="Preview" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+                                <label className="flex-1 cursor-pointer bg-slate-50 dark:bg-slate-900 border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-emerald-500 dark:hover:border-emerald-500 rounded-xl p-4 flex flex-col items-center justify-center gap-1 transition-all group">
+                                    <Upload size={20} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium group-hover:text-emerald-500 transition-colors">Click to upload image</span>
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleNewProductImageSelect} />
+                                </label>
+                            </div>
+                        </div>
+
                         <div className="pt-4 flex gap-3">
                             <button 
                                 type="button" 
@@ -748,6 +781,109 @@ const DealerDashboard: React.FC<DealerDashboardProps> = ({
             </div>
         </div>
       )}
+
+      {/* Reports Modal */}
+      {isReportsOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+             <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 rounded-t-3xl">
+                     <div className="flex items-center gap-3">
+                        <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-xl text-blue-600 dark:text-blue-400">
+                           <BarChart3 size={24} />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t.reports_title}</h3>
+                     </div>
+                     <button onClick={() => setIsReportsOpen(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors">
+                        <X size={20} className="text-slate-500" />
+                     </button>
+                </div>
+                <div className="p-8 overflow-y-auto custom-scrollbar">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                       <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg shadow-emerald-500/20">
+                           <p className="text-emerald-100 text-xs font-bold uppercase tracking-wider mb-1">{t.sales_summary}</p>
+                           <h4 className="text-3xl font-bold">ETB 245,000</h4>
+                           <div className="mt-4 flex items-center gap-2 text-xs bg-white/20 w-fit px-2 py-1 rounded-lg">
+                              <TrendingUp size={12} /> +12% vs last month
+                           </div>
+                       </div>
+                       <div className="bg-slate-100 dark:bg-slate-700/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-600">
+                           <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Active Customers</p>
+                           <h4 className="text-3xl font-bold text-slate-900 dark:text-white">1,240</h4>
+                           <div className="mt-4 flex -space-x-2">
+                               {[1,2,3,4].map(i => (
+                                 <div key={i} className="w-8 h-8 rounded-full bg-slate-300 dark:bg-slate-600 border-2 border-white dark:border-slate-800"></div>
+                               ))}
+                               <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-white dark:border-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-500">+42</div>
+                           </div>
+                       </div>
+                    </div>
+
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-4">{t.top_products}</h4>
+                    <div className="space-y-3">
+                        {inventory.slice(0, 3).map((item, idx) => (
+                           <div key={item.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-700">
+                               <div className="flex items-center gap-4">
+                                   <span className="font-mono text-slate-400 font-bold text-sm">0{idx + 1}</span>
+                                   <div>
+                                      <p className="font-bold text-slate-800 dark:text-slate-200">{item.name}</p>
+                                      <p className="text-xs text-slate-500">{item.category}</p>
+                                   </div>
+                               </div>
+                               <div className="text-right">
+                                   <p className="font-bold text-emerald-600 dark:text-emerald-400">{Math.floor(Math.random() * 50) + 20} Sales</p>
+                               </div>
+                           </div>
+                        ))}
+                    </div>
+                </div>
+             </div>
+          </div>
+      )}
+
+      {/* Settings Modal */}
+      {isSettingsOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+             <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 rounded-t-3xl">
+                     <div className="flex items-center gap-3">
+                        <div className="bg-slate-200 dark:bg-slate-700 p-2 rounded-xl text-slate-600 dark:text-slate-300">
+                           <Settings size={24} />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t.settings_title}</h3>
+                     </div>
+                     <button onClick={() => setIsSettingsOpen(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors">
+                        <X size={20} className="text-slate-500" />
+                     </button>
+                </div>
+                <div className="p-8 space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.store_profile}</label>
+                        <input type="text" defaultValue="GreenAgro Inputs" className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl dark:text-white" />
+                    </div>
+                    
+                    <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                        <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                           <Bell size={16} /> {t.notifications}
+                        </h4>
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">{t.enable_sms_alerts}</span>
+                            <div className="w-12 h-6 bg-emerald-500 rounded-full relative cursor-pointer">
+                                <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={() => setIsSettingsOpen(false)}
+                        className="w-full py-3.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-bold shadow-lg mt-4 active:scale-95 transition-all"
+                    >
+                        {t.save_changes}
+                    </button>
+                </div>
+             </div>
+          </div>
+      )}
+
     </div>
   );
 };

@@ -30,6 +30,19 @@ const SMSSimulator: React.FC<SMSSimulatorProps> = ({ language = 'en', messages, 
     setInputText('');
   };
 
+  const getMessageText = (msg: SMSMessage) => {
+    if (msg.translationKey && t[msg.translationKey]) {
+      let text = t[msg.translationKey];
+      if (msg.translationParams) {
+        Object.entries(msg.translationParams).forEach(([key, val]) => {
+          text = text.replace(`{${key}}`, val);
+        });
+      }
+      return text;
+    }
+    return msg.text;
+  };
+
   return (
     <div className="flex flex-col items-center justify-center h-full p-4 transition-colors w-full">
       <div className="bg-white dark:bg-slate-900 w-full max-w-[320px] h-[600px] rounded-[30px] shadow-2xl border-[8px] border-slate-800 dark:border-slate-950 flex flex-col overflow-hidden relative transition-colors duration-300 transform hover:scale-[1.01]">
@@ -58,7 +71,7 @@ const SMSSimulator: React.FC<SMSSimulatorProps> = ({ language = 'en', messages, 
                 ? 'bg-emerald-500 text-white rounded-br-none' 
                 : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-bl-none border border-slate-200 dark:border-slate-700'
               }`}>
-                {msg.text}
+                {getMessageText(msg)}
                 <div className={`text-[10px] mt-1 text-right ${msg.sender === 'Farmer' ? 'text-emerald-100' : 'text-slate-400 dark:text-slate-500'}`}>
                   {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                 </div>

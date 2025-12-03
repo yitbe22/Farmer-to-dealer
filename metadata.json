@@ -1,5 +1,5 @@
 {
-  "name": "Copy of AgriConnect MVP",
+  "name": "AgriConnect MVP V2",
   "description": "A comprehensive agricultural system featuring a USSD simulator for farmers, a dealer inventory dashboard, and an AI-powered call center interface.",
   "requestFramePermissions": [
     "microphone"

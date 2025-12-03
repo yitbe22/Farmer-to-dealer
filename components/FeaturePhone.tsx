@@ -33,6 +33,19 @@ const FeaturePhone: React.FC<FeaturePhoneProps> = ({ messages, farmerName, langu
     }
   };
 
+  const getMessageText = (msg: SMSMessage) => {
+    if (msg.translationKey && t[msg.translationKey]) {
+      let text = t[msg.translationKey];
+      if (msg.translationParams) {
+        Object.entries(msg.translationParams).forEach(([key, val]) => {
+          text = text.replace(`{${key}}`, val);
+        });
+      }
+      return text;
+    }
+    return msg.text;
+  };
+
   return (
     <div className="relative group">
       {/* Device Body */}
@@ -86,7 +99,7 @@ const FeaturePhone: React.FC<FeaturePhoneProps> = ({ messages, farmerName, langu
                         : 'bg-slate-700 text-slate-100 rounded-bl-none border border-slate-600'
                     }`}>
                       {msg.sender === 'System' && <span className="font-bold block mb-0.5 text-emerald-400 text-[8px] uppercase tracking-wider">AgriConnect</span>}
-                      {msg.text}
+                      {getMessageText(msg)}
                     </div>
                     <span className="text-[7px] text-slate-500 mt-0.5 px-0.5">
                         {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}

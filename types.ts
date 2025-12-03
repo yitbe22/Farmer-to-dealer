@@ -50,6 +50,8 @@ export interface SMSMessage {
   sender: 'System' | 'Farmer';
   text: string;
   timestamp: string;
+  translationKey?: string; // Key in TRANSLATIONS
+  translationParams?: Record<string, string>; // Params to replace in template
 }
 
 export interface HistoryLog {

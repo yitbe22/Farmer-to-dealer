@@ -59,14 +59,14 @@ export const generateSMSReply = async (message: string, language: Language = 'en
       if (language === 'am') {
         if (lower.includes('price') || lower.includes('ዋጋ')) return "የገበያ መረጃ:\nበቆሎ: 55 ብር/ኪሎ\nስንዴ: 85 ብር/ኪሎ\nጤፍ: 120 ብር/ኪሎ";
         if (lower.includes('sell') || lower.includes('መሸጥ')) return "ምርት ለመሸጥ: [ሰብል] [መጠን] ብለው ይላኩ። ምሳሌ: SELL TEFF 50";
-        if (lower.includes('buy') || lower.includes('መግዛት')) return "ግብዓት ለመግዛት: በአቅራቢያዎ ወደሚገኝ ሱቅ ይሂዱ ወይም *808# ይጠቀሙ።";
+        if (lower.includes('buy') || lower.includes('መግዛት')) return "ግብዓት ለመግዛት: በአቅራቢያዎ ወደሚገኝ ሱቅ ይሂዱ ወይም *707# ይጠቀሙ።";
         if (lower.includes('help') || lower.includes('እርዳታ')) return "ትዕዛዞች:\nSELL - ምርት ለመሸጥ\nBUY - ለመግዛት\nPRICE - ዋጋ ለማየት";
         return "እንኳን ደህና መጡ! እርዳታ ለማግኘት HELP ወይም እርዳታ ብለው ይላኩ።";
       }
 
       if (lower.includes('price')) return "MARKET UPDATE:\nMaize: 55 ETB/kg\nWheat: 85 ETB/kg\nTeff: 120 ETB/kg";
       if (lower.includes('sell')) return "To sell produce, reply with: [CROP] [QUANTITY]. Example: SELL TEFF 50";
-      if (lower.includes('buy')) return "To buy inputs, visit your local dealer or use *808#.";
+      if (lower.includes('buy')) return "To buy inputs, visit your local dealer or use *707#.";
       if (lower.includes('hello') || lower.includes('hi')) return "Welcome! Reply SELL to offer produce, BUY for inputs, or PRICE for rates.";
       if (lower.includes('help')) return "Commands:\nSELL - Offer Crop\nBUY - Order Inputs\nPRICE - Market Rates\nTIP - Advice";
       return "Thank you. An agent will review your request. Reply HELP for options.";
